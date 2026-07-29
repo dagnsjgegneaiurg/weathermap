@@ -13,23 +13,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout main
         uses: actions/checkout@v4
-        with:
-          ref: main
 
-      - name: Download weather map
+      - name: Download weather map with timestamp
         run: |
-          mkdir -p images
-          curl -fL "https://www.weather.gov/wwamap/png/US.png" -o images/US.png
+          mkdir -p archive
 
-      - name: Commit and push changes
+          filename="archive/US_$(date -u '+%Y%m%d_%H00').png"
+
+          curl -fL \
+            "https://www.weather.gov/wwamap/png/US.png" \
+            -o "$filename"
+
+          echo "Saved $filename"
+
+      - name: Create image list
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          ls archive/*.png | sed 's#^#"#;s#$#",#' | sed '$s/,$//' > archive/images.json
+          sed -i '1s/^/[/; $s/$/]/' archive/images.json
 
-          git add images/US.png
+      - name: Commit files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git commit -m "Update weather map" || exit 0
+          git add archive/
+
+          git commit -m "Weather map update $(date -u)" || exit 0
 
           git push
