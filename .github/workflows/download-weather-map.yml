@@ -1,6 +1,35 @@
-- name: Download image
-  run: |
-    mkdir -p archive
-    curl -L \
-      "https://www.weather.gov/wwamap/png/US.png" \
-      -o "archive/US_$(date -u '+%Y%m%d_%H00').png"
+name: Download Weather Map Hourly
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download weather map
+        run: |
+          mkdir -p images
+          curl -fL "https://www.weather.gov/wwamap/png/US.png" -o images/US.png
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add images/US.png
+
+          git commit -m "Update weather map" || exit 0
+
+          git push
