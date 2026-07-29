@@ -2,7 +2,7 @@ name: Download Weather Map Hourly
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
