@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Weather Satellite Timeline</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, sans-serif;
+    color: white;
+    overflow: hidden;
+
+    background:
+      radial-gradient(circle at top,
+      #4facfe,
+      #1b2735 60%,
+      #090a0f);
+}
+
+/* animated clouds */
+body::before {
+    content:"";
+    position:absolute;
+    inset:-100px;
+    background:
+      radial-gradient(circle,rgba(255,255,255,.15) 0 20%,transparent 40%);
+    animation: drift 30s linear infinite;
+}
+
+@keyframes drift {
+    from {transform:translateX(-20%);}
+    to {transform:translateX(20%);}
+}
+
+
+.app {
+    position:relative;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+
+.header {
+    padding:20px;
+    text-align:center;
+
+    background:
+    rgba(0,0,0,.25);
+
+    backdrop-filter:blur(15px);
+}
+
+
+.title {
+    font-size:28px;
+    font-weight:700;
+}
+
+
+.status {
+    opacity:.8;
+}
+
+
+.viewer {
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+
+.card {
+    position:relative;
+
+    width:min(95vw,1200px);
+    height:min(75vh,800px);
+
+    border-radius:30px;
+    overflow:hidden;
+
+    background:#000;
+
+    box-shadow:
+    0 20px 80px rgba(0,0,0,.6);
+}
+
+
+.weather-image {
+
+    width:100%;
+    height:100%;
+
+    object-fit:contain;
+
+    transition:
+    opacity 1s,
+    transform 1s;
+
+}
+
+
+.fade {
+    opacity:0;
+    transform:scale(1.05);
+}
+
+
+.controls {
+
+    padding:20px;
+
+    display:flex;
+    justify-content:center;
+    gap:15px;
+
+}
+
+
+button {
+
+    border:0;
+
+    padding:12px 25px;
+
+    border-radius:30px;
+
+    color:white;
+
+    background:
+    linear-gradient(135deg,#00c6ff,#0072ff);
+
+    font-size:16px;
+
+    cursor:pointer;
+
+}
+
+
+.timeline {
+
+    position:absolute;
+
+    bottom:20px;
+    left:20px;
+    right:20px;
+
+    background:
+    rgba(0,0,0,.5);
+
+    padding:10px;
+
+    border-radius:20px;
+
+    backdrop-filter:blur(10px);
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="app">
+
+<header class="header">
+
+<div class="title">
+🌎 Weather Timeline
+</div>
+
+<div class="status" id="status">
+Loading weather maps...
+</div>
+
+</header>
+
+
+<div class="viewer">
+
+<div class="card">
+
+<img id="weather"
+class="weather-image">
+
+<div class="timeline">
+<div id="time">
+</div>
+</div>
+
+</div>
+
+</div>
+
+
+<div class="controls">
+
+<button onclick="previous()">
+◀ Previous
+</button>
+
+<button onclick="toggle()">
+⏯ Play
+</button>
+
+<button onclick="next()">
+Next ▶
+</button>
+
+</div>
+
+
+</div>
+
+
+<script>
+
+
+/*
+ Update this list when using archived images.
+ GitHub Pages cannot automatically list folders,
+ so the filenames are generated here.
+*/
+
+
+let images=[];
+
+
+// Generate last 48 hours
+
+function buildList(){
+
+    let now=new Date();
+
+    for(let i=47;i>=0;i--){
+
+        let d=new Date(
+            now.getTime()-i*3600000
+        );
+
+
+        let name =
+        "archive/US_"+
+        d.getUTCFullYear()+
+        String(d.getUTCMonth()+1).padStart(2,"0")+
+        String(d.getUTCDate()).padStart(2,"0")+
+        "_"+
+        String(d.getUTCHours()).padStart(2,"0")+
+        "00.png";
+
+
+        images.push(name);
+
+    }
+
+}
+
+
+let index=images.length-1;
+
+let playing=true;
+
+let timer;
+
+
+
+const img=document.getElementById("weather");
+
+const status=document.getElementById("status");
+
+const time=document.getElementById("time");
+
+
+
+function show(){
+
+    if(!images.length)return;
+
+
+    img.classList.add("fade");
+
+
+    setTimeout(()=>{
+
+
+        img.src=images[index]
+        +"?t="+Date.now();
+
+
+        img.onload=()=>{
+
+            img.classList.remove("fade");
+
+            let filename =
+            images[index]
+            .split("/")
+            .pop();
+
+
+            time.innerHTML=
+            "🛰 "+filename;
+
+            status.innerHTML=
+            `${index+1} / ${images.length}`;
+
+        };
+
+
+    },500);
+
+
+}
+
+
+
+function next(){
+
+    index++;
+
+    if(index>=images.length)
+        index=0;
+
+    show();
+
+}
+
+
+
+function previous(){
+
+    index--;
+
+    if(index<0)
+        index=images.length-1;
+
+    show();
+
+}
+
+
+
+function toggle(){
+
+    playing=!playing;
+
+    if(playing){
+
+        timer=setInterval(
+            next,
+            5000
+        );
+
+    }else{
+
+        clearInterval(timer);
+
+    }
+
+}
+
+
+
+buildList();
+
+show();
+
+timer=setInterval(
+    next,
+    5000
+);
+
+
+</script>
+
+
+</body>
+</html>
